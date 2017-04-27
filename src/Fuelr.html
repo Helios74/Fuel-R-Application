@@ -3,6 +3,7 @@
 <tr>
   <td colspan="2">
         <br />
+		<input name="Your Vehicle Range" id="VeRange" type="text">
         <input type="button" value="Get Distances" onclick="GetRoute()" />
         <hr />
     </td>
@@ -33,7 +34,11 @@
     var source
     var longs = [];
     var lats = [];
-      function initMap() {
+	var names = [];
+	var cities = [];
+	var addresses = [];
+	
+    function initMap() {
         var map = new google.maps.Map(document.getElementById('map'), {
           center: {lat: 25.397, lng: -90.644},
           zoom: 5
@@ -53,7 +58,6 @@
             handleLocationError(true, infoWindow, map.getCenter());
           });
         } else {
-          // Browser doesn't support Geolocation
           handleLocationError(false, infoWindow, map.getCenter());
         }
           var json = (function () {
@@ -69,12 +73,15 @@
     });
     return json;
 })(); 
-for (var i = 0; i < json.fuel_stations.length; i++) {
-	var lat = json.fuel_stations[i].latitude;
-	var lng = json.fuel_stations[i].longitude;
+	for (var i = 0; i < json.fuel_stations.length; i++) {
         if(json.fuel_stations[i].state == "AR"){
+			 lat = json.fuel_stations[i].latitude;
+			 lng = json.fuel_stations[i].longitude;
              lats.push(lat);
              longs.push(lng);
+			 names.push(json.fuel_stations[i].station_name);
+			 cities.push(json.fuel_stations[i].city);
+			 addresses.push(json.fuel_stations[i].street_address);
              var marker = new google.maps.Marker({
 		map: map,
 		position: {
@@ -85,39 +92,44 @@ for (var i = 0; i < json.fuel_stations.length; i++) {
                 });
              }
         }
-}
-function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+	}
+	function handleLocationError(browserHasGeolocation, infoWindow, pos) {
         infoWindow.setPosition(pos);
         infoWindow.setContent(browserHasGeolocation ?
                               'Error: The Geolocation service failed.' :
                               'Error: Your browser doesn\'t support geolocation.');
          }
+		 
     function GetRoute() {
-    
+	var max = document.getElementById('VeRange').value;
+	document.getElementById("dvDistance").innerHTML = "";
     for(var i = 0; i < lats.length; i++)
-{
-    var destination = new google.maps.LatLng(lats[i], longs[i]);
-    var service = new google.maps.DistanceMatrixService();
-    service.getDistanceMatrix({
+	{
+                var j = 0;
+		var destination = new google.maps.LatLng(lats[i], longs[i]);
+		var service = new google.maps.DistanceMatrixService();
+		service.getDistanceMatrix({
         origins: [source],
         destinations: [destination],
         travelMode: google.maps.TravelMode.DRIVING,
         unitSystem: google.maps.UnitSystem.IMPERIAL,
         avoidHighways: false,
         avoidTolls: false
-    }, function (response, status) {
-        if (status == google.maps.DistanceMatrixStatus.OK && response.rows[0].elements[0].status != "ZERO_RESULTS") {
-            var distance = response.rows[0].elements[0].distance.text;
-            var dvDistance = document.getElementById("dvDistance");
-            dvDistance.innerHTML += "Distance: " + distance + "<br />";
-            var dis = distance.substring(0,3);
-            console.log(dis);
-            if(Number(dis) < 50)
-            {
-                  dvDistance.innerHTML += "You are Within Range" + "<br />";
-            }
+		}, function (response, status) {
+			if (status == google.maps.DistanceMatrixStatus.OK && response.rows[0].elements[0].status != "ZERO_RESULTS") {
+                                console.log(j);
+				var distance = response.rows[0].elements[0].distance.text;
+				var dvDistance = document.getElementById("dvDistance");
+				//dvDistance.innerHTML += "Distance: " + distance + "<br />";
+				var dis = distance.substring(0,3);
+				if(Number(dis) < max)
+				{
+					dvDistance.innerHTML += "You are Within Range of " + names[j] + "<br />";
+					dvDistance.innerHTML += "It is located at " + addresses[j] + " in " + cities[j] + "<br />";
+				}
+                j++;
         } else {
-            alert("Unable to find the distance via road.");
+            //alert("Unable to find the distance via road.");
         }
     });
 }
